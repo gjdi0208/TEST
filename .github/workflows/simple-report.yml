@@ -46,6 +46,92 @@ jobs:
         echo "🚀 보고서 생성 시작: $(date '+%Y-%m-%d %H:%M:%S %Z')"
         python github_actions_report.py
         echo "✅ 보고서 생성 완료"
+
+    - name: Send email with report
+      env:
+        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL || 'gjdi0208@gmail.com' }}
+        SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD || 'hkcn ywsk wmxk vqvm' }}
+        RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL || 'gjdi0208@gmail.com' }}
+      run: |
+        echo "📧 이메일 발송을 시작합니다..."
+        python -c "
+        import smtplib
+        import os
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.mime.base import MIMEBase
+        from email import encoders
+        from datetime import datetime
+        import glob
+        
+        # 이메일 발송 함수
+        def send_email():
+            sender_email = os.environ['SENDER_EMAIL']
+            sender_password = os.environ['SENDER_PASSWORD']  
+            recipient_email = os.environ['RECIPIENT_EMAIL']
+            
+            # 보고서 파일 찾기
+            docx_files = glob.glob('*.docx')
+            if not docx_files:
+                print('❌ 보고서 파일을 찾을 수 없습니다.')
+                return False
+            
+            report_file = docx_files[0]
+            print(f'📄 보고서 파일: {report_file}')
+            
+            # 이메일 메시지 구성
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = recipient_email
+            msg['Subject'] = f'자동 생성 판매 보고서 - {datetime.now().strftime(\"%Y-%m-%d\")}'
+            
+            body = '''안녕하세요!
+        
+        GitHub Actions에서 자동 생성된 판매 보고서를 전송드립니다.
+        
+        📊 보고서 정보:
+        - 생성 시간: ''' + datetime.now().strftime('%Y년 %m월 %d일 %H시 %M분') + '''
+        - 파일명: ''' + report_file + '''
+        - 자동화 시스템: GitHub Actions
+        
+        첨부된 보고서를 확인해 주세요.
+        
+        감사합니다.'''
+            
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
+            
+            # 파일 첨부
+            try:
+                with open(report_file, 'rb') as attachment:
+                    part = MIMEBase('application', 'octet-stream')
+                    part.set_payload(attachment.read())
+                    encoders.encode_base64(part)
+                    part.add_header('Content-Disposition', f'attachment; filename= {report_file}')
+                    msg.attach(part)
+                print(f'✅ 파일 첨부 완료: {report_file}')
+            except Exception as e:
+                print(f'❌ 파일 첨부 실패: {e}')
+                return False
+            
+            # 이메일 발송
+            try:
+                server = smtplib.SMTP('smtp.gmail.com', 587)
+                server.starttls()
+                server.login(sender_email, sender_password)
+                server.sendmail(sender_email, recipient_email, msg.as_string())
+                server.quit()
+                print(f'✅ 이메일 발송 성공: {sender_email} → {recipient_email}')
+                return True
+            except Exception as e:
+                print(f'❌ 이메일 발송 실패: {e}')
+                return False
+        
+        # 실행
+        success = send_email()
+        if not success:
+            exit(1)
+        "
+        echo "📧 이메일 발송 완료!"
     
     - name: Archive reports
       uses: actions/upload-artifact@v4
