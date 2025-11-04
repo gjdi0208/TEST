@@ -15,6 +15,10 @@ on:
         - 'true'
         - 'false'
 
+permissions:
+  contents: write  # Release 생성을 위한 권한
+  packages: write
+
 env:
   TZ: Asia/Seoul
 
@@ -48,27 +52,28 @@ jobs:
       with:
         name: sales-report-$(date +%Y%m%d)
         path: |
-          sales_analysis_report.docx
+          sales_analysis_report_*.docx
           chart_*.png
         retention-days: 30
 
-    - name: Commit and push if files changed
+    - name: Success notification
+      if: success()
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        echo "🎉 보고서 생성 성공!"
+        echo "📊 생성된 파일들이 Artifact로 업로드되었습니다."
+        echo "📅 보관 기간: 30일"
+        echo "📁 다운로드는 Actions 탭 > 해당 워크플로우 실행 > Artifacts에서 가능합니다."
         
-        # 생성된 파일들을 reports 디렉토리로 이동
-        mkdir -p reports/$(date +%Y%m%d)
-        mv *.docx reports/$(date +%Y%m%d)/ 2>/dev/null || true
-        mv chart_*.png reports/$(date +%Y%m%d)/ 2>/dev/null || true
-        
-        # README 업데이트
-        echo "# 📊 주간 판매 보고서 자동 생성" > reports/README.md
-        echo "" >> reports/README.md
-        echo "마지막 업데이트: $(date '+%Y-%m-%d %H:%M:%S %Z')" >> reports/README.md
-        echo "" >> reports/README.md
-        echo "## 📁 보고서 목록" >> reports/README.md
-        ls -la reports/*/ >> reports/README.md 2>/dev/null || true
+        # 생성된 파일 목록 표시
+        echo ""
+        echo "📋 생성된 파일 목록:"
+        ls -la *.docx *.png 2>/dev/null || echo "파일을 찾을 수 없습니다."
+
+    - name: Failure notification
+      if: failure()
+      run: |
+        echo "❌ 보고서 생성에 실패했습니다."
+        echo "🔍 로그를 확인하여 문제를 해결해주세요."
         
         git add reports/
         git diff --staged --quiet || git commit -m "📊 자동 생성된 주간 보고서 - $(date +%Y%m%d)"

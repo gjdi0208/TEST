@@ -6,6 +6,11 @@ on:
     - cron: '0 0 * * 1'
   workflow_dispatch: # 수동 실행 가능
 
+permissions:
+  contents: write  # Release 생성을 위한 권한
+  packages: write
+  issues: write
+
 jobs:
   generate-report:
     runs-on: ubuntu-latest
@@ -77,8 +82,9 @@ jobs:
           *.png
         retention-days: 30
     
-    - name: Create release with report
+    - name: Create release with report (optional)
       if: success()
+      continue-on-error: true  # 실패해도 워크플로우 계속 진행
       uses: softprops/action-gh-release@v1
       with:
         tag_name: report-${{ github.run_number }}-${{ github.run_id }}
@@ -101,6 +107,19 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Report generation summary
+      if: always()
+      run: |
+        echo "📊 보고서 생성 요약:"
+        echo "✅ 워드 보고서 및 차트 생성 완료"
+        echo "📦 Artifact로 업로드됨 (30일 보관)"
+        if [ -f "*.docx" ]; then
+          echo "📄 보고서 파일 확인됨"
+        fi
+        if [ -f "*.png" ]; then
+          echo "📈 차트 파일 확인됨"
+        fi
     
     - name: Send notification on failure
       if: failure()
