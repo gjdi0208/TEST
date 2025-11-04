@@ -64,7 +64,7 @@ jobs:
         echo "✅ 보고서 생성 완료"
     
     - name: Archive reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sales-report-$(date +%Y%m%d)
         path: |

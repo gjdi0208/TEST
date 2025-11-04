@@ -75,7 +75,7 @@ jobs:
         ls -la *.docx *.png 2>/dev/null || echo "생성된 파일이 없습니다."
     
     - name: Upload report as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: weekly-sales-report-${{ github.run_number }}
         path: |
