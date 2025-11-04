@@ -56,41 +56,12 @@ jobs:
           head -5 cicd_data.csv
         fi
     
-    - name: Modify script for GitHub Actions environment
-      run: |
-        # Python 스크립트를 GitHub Actions 환경에 맞게 수정
-        python -c "
-        import re
-        
-        # word_report_generator.py 파일 읽기
-        with open('word_report_generator.py', 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # 한글 폰트를 Ubuntu 환경에 맞게 변경
-        content = content.replace(
-            \"plt.rcParams['font.family'] = 'Malgun Gothic'\",
-            \"plt.rcParams['font.family'] = 'DejaVu Sans'\"
-        )
-        
-        # 이메일 전송 함수 호출을 GitHub Actions용 메시지로 변경
-        content = content.replace(
-            'send_email_interactive()',
-            'print(\"📧 GitHub Actions 환경에서는 이메일 전송을 건너뜁니다.\")'
-        )
-        
-        # 수정된 내용 저장
-        with open('word_report_generator.py', 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        print('✅ 스크립트가 GitHub Actions 환경에 맞게 수정되었습니다.')
-        "
-    
     - name: Generate sales report
       env:
         MPLBACKEND: Agg  # matplotlib headless 백엔드 설정
       run: |
         echo "🚀 판매 보고서 생성을 시작합니다..."
-        python word_report_generator.py
+        python github_actions_report.py
     
     - name: List generated files
       run: |

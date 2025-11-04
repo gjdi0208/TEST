@@ -35,34 +35,12 @@ jobs:
       run: |
         pip install -r requirements.txt || pip install pandas matplotlib seaborn numpy openpyxl python-docx
     
-    - name: Configure for GitHub Actions
-      run: |
-        # 스크립트를 GitHub Actions 환경에 맞게 수정
-        python -c "
-        import os
-        
-        # word_report_generator.py 수정
-        with open('word_report_generator.py', 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # 한글 폰트를 DejaVu Sans로 변경
-        content = content.replace(\"plt.rcParams['font.family'] = 'Malgun Gothic'\", \"plt.rcParams['font.family'] = 'DejaVu Sans'\")
-        
-        # 대화형 이메일 전송 비활성화
-        content = content.replace('send_email_interactive()', 'print(\"📧 GitHub Actions에서는 이메일 전송을 건너뜁니다.\")')
-        
-        with open('word_report_generator.py', 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        print('✅ 스크립트가 GitHub Actions 환경에 맞게 수정되었습니다.')
-        "
-    
     - name: Generate report
       env:
         MPLBACKEND: Agg  # matplotlib headless 백엔드 설정
       run: |
         echo "🚀 보고서 생성 시작: $(date '+%Y-%m-%d %H:%M:%S %Z')"
-        python word_report_generator.py
+        python github_actions_report.py
         echo "✅ 보고서 생성 완료"
     
     - name: Archive reports
