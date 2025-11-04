@@ -1,0 +1,122 @@
+name: Weekly Sales Report Generation
+
+on:
+  schedule:
+    # 매주 월요일 오전 9시 (UTC+9) = 매주 월요일 오전 12시 (UTC)
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fonts-nanum fonts-nanum-coding fonts-nanum-extra
+        # 한글 폰트 설치 (Malgun Gothic 대체)
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas matplotlib seaborn numpy openpyxl python-docx
+    
+    - name: Set up Korean timezone
+      run: |
+        sudo timedatectl set-timezone Asia/Seoul
+    
+    - name: Configure matplotlib for headless environment
+      run: |
+        python -c "
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        plt.rcParams['font.family'] = 'DejaVu Sans'  # Ubuntu에서 사용 가능한 폰트
+        print('Matplotlib configured successfully')
+        "
+    
+    - name: Check if data file exists
+      run: |
+        if [ ! -f "cicd_data.csv" ]; then
+          echo "❌ cicd_data.csv 파일이 없습니다."
+          echo "데이터 파일을 리포지토리에 추가해주세요."
+          exit 1
+        else
+          echo "✅ 데이터 파일이 존재합니다."
+          head -5 cicd_data.csv
+        fi
+    
+    - name: Modify script for GitHub Actions environment
+      run: |
+        # 한글 폰트 설정을 Ubuntu 환경에 맞게 수정
+        sed -i "s/plt.rcParams\['font.family'\] = 'Malgun Gothic'/plt.rcParams['font.family'] = 'DejaVu Sans'/" word_report_generator.py
+        
+        # 이메일 전송 부분을 비활성화 (보안상 이유)
+        sed -i 's/send_email_interactive()/print("📧 GitHub Actions 환경에서는 이메일 전송을 건너뜁니다.")/' word_report_generator.py
+    
+    - name: Generate sales report
+      run: |
+        echo "🚀 판매 보고서 생성을 시작합니다..."
+        python word_report_generator.py
+    
+    - name: List generated files
+      run: |
+        echo "📁 생성된 파일 목록:"
+        ls -la *.docx *.png 2>/dev/null || echo "생성된 파일이 없습니다."
+    
+    - name: Upload report as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: weekly-sales-report-${{ github.run_number }}
+        path: |
+          *.docx
+          *.png
+        retention-days: 30
+    
+    - name: Create release with report
+      if: success()
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: report-${{ github.run_number }}-${{ github.run_id }}
+        name: Weekly Sales Report - ${{ github.run_number }}
+        body: |
+          📊 자동 생성된 주간 판매 보고서
+          
+          🕒 생성 시간: ${{ github.event.repository.updated_at }}
+          🔄 실행 번호: ${{ github.run_number }}
+          
+          📈 포함된 내용:
+          - 워드 보고서 (sales_analysis_report.docx)
+          - 시각화 차트 (PNG 파일들)
+          
+          📋 파일을 다운로드하여 확인하세요.
+        files: |
+          *.docx
+          *.png
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Send notification on failure
+      if: failure()
+      run: |
+        echo "❌ 보고서 생성에 실패했습니다."
+        echo "로그를 확인하여 문제를 해결해주세요."
+        
+    - name: Clean up temporary files
+      if: always()
+      run: |
+        echo "🧹 임시 파일 정리 중..."
+        # 차트 파일들은 artifact로 업로드되므로 정리하지 않음
+        echo "정리 완료"
