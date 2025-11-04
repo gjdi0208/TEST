@@ -58,6 +58,8 @@ jobs:
         "
     
     - name: Generate report
+      env:
+        MPLBACKEND: Agg  # matplotlib headless 백엔드 설정
       run: |
         echo "🚀 보고서 생성 시작: $(date '+%Y-%m-%d %H:%M:%S %Z')"
         python word_report_generator.py
