@@ -28,13 +28,13 @@ matplotlib.use('Agg')
 plt.rcParams['font.family'] = 'Malgun Gothic'
 plt.rcParams['axes.unicode_minus'] = False
 
-# ==================== 이메일 설정 (임시) ====================
+# ==================== 이메일 설정 ====================
 EMAIL_CONFIG = {
-    'sender_email': 'your_email@gmail.com',  # 보내는 사람 이메일
-    'sender_password': 'your_app_password',  # Gmail 앱 비밀번호
+    'sender_email': 'gjdi0208@gmail.com',    # 보내는 사람 이메일
+    'sender_password': 'hkcn ywsk wmxk vqvm',  # Gmail 앱 비밀번호
     'recipient_emails': [                    # 받는 사람 이메일 리스트
-        'recipient1@gmail.com',
-        'recipient2@company.com'
+        'gjdi0208@gmail.com',                # 자신에게도 전송
+        'recipient@company.com'              # 필요시 다른 수신자 추가
     ],
     'smtp_server': 'smtp.gmail.com',         # SMTP 서버
     'smtp_port': 587                         # SMTP 포트
@@ -450,13 +450,13 @@ def main():
         print(f"보내는 사람: {EMAIL_CONFIG['sender_email']}")
         print(f"받는 사람: {', '.join(EMAIL_CONFIG['recipient_emails'])}")
         
-        # 실제 이메일 전송 (주석 해제하여 사용)
-        # email_success = send_email_with_report(report_file, EMAIL_CONFIG)
+        # 실제 이메일 전송
+        email_success = send_email_with_report(report_file, EMAIL_CONFIG)
         
-        # 테스트용 - 실제로는 위 라인을 주석 해제하고 아래 라인을 주석 처리
-        print("📧 이메일 전송 기능은 설정 완료 후 사용하세요.")
-        print("💡 EMAIL_CONFIG에서 실제 이메일 정보를 입력하고 send_email_with_report 함수 주석을 해제하세요.")
-        email_success = True  # 테스트용
+        # 테스트용 - 위 라인이 활성화되면 아래는 주석 처리
+        # print("📧 이메일 전송 기능은 설정 완료 후 사용하세요.")
+        # print("💡 EMAIL_CONFIG에서 실제 이메일 정보를 입력하고 send_email_with_report 함수 주석을 해제하세요.")
+        # email_success = True  # 테스트용
         
         # 결과 요약
         end_time = datetime.now()
